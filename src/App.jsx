@@ -1,24 +1,11 @@
 import React from "react"
+import { Input } from "./components"
+import {
+  validateEmail,
+  validatePasswordMinLength,
+  validatePasswordSymbols,
+} from "./validators"
 import styles from "./App.module.css"
-
-const validateEmail = (email) => {
-  if (!email.trim()) return "Email is required"
-  if (email.length < 6) return "Email must be at least 6 characters"
-  if (!/\S+@\S+\.\S+/.test(email)) return "Email is invalid"
-  return null
-}
-
-const validatePassword = (password) => {
-  if (!password.trim()) return "Password is required"
-  if (password.length < 6) return "Password must be at least 6 characters"
-  return null
-}
-
-const validatePasswordRepeat = (password, passwordRepeat) => {
-  if (!passwordRepeat.trim()) return "Please confirm password"
-  if (password !== passwordRepeat) return "Passwords do not match"
-  return null
-}
 
 export default function App() {
   const [formData, setFormData] = React.useState({
@@ -26,121 +13,83 @@ export default function App() {
     password: "",
     passwordRepeat: "",
   })
-  const [errors, setErrors] = React.useState({})
+  const [formDataErrors, setFormDataErrors] = React.useState({
+    isEmailValid: false,
+    isPasswordValid: false,
+    isPasswordRepeatValid: false,
+  })
 
   const buttonRef = React.useRef(null)
-  const isFormValid = Object.values(errors).every((error) => error === null)
+  let isFormValid =
+    formDataErrors.isEmailValid &&
+    formDataErrors.isPasswordValid &&
+    formDataErrors.isPasswordRepeatValid
 
-  React.useEffect(() => {
-    if (
-      isFormValid &&
-      validateEmail(formData.email) === null &&
-      validatePassword(formData.password) === null &&
-      validatePasswordRepeat(formData.password, formData.passwordRepeat) ===
-        null
-    ) {
-      buttonRef.current.focus()
-    }
-  }, [isFormValid, formData])
+  const onSubmit = (event) => {
+    event.preventDefault()
 
-  const sendFormData = (formData) => {
     console.log(formData)
   }
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
-
-    const newErrors = {
-      email: validateEmail(formData.email),
-      password: validatePassword(formData.password),
-      passwordRepeat: validatePasswordRepeat(
-        formData.password,
-        formData.passwordRepeat
-      ),
+  React.useEffect(() => {
+    if (isFormValid) {
+      buttonRef.current.focus()
     }
-
-    setErrors(newErrors)
-
-    if (Object.values(newErrors).every((error) => error === null)) {
-      sendFormData(formData)
-    }
-  }
-
-  const validateField = (field, value) => {
-    switch (field) {
-      case "email":
-        return validateEmail(value)
-      case "password":
-        return validatePassword(value)
-      case "passwordRepeat":
-        return validatePasswordRepeat(formData.password, value)
-      default:
-        return null
-    }
-  }
-
-  const handleOnChange = (field) => (event) => {
-    const value = event.target.value
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleOnBlur = (field) => (event) => {
-    const value = event.target.value
-
-    if (value.length > 3) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: validateField(field, value),
-      }))
-    }
-  }
+  }, [isFormValid])
 
   return (
-    <form className={styles["register-form"]} onSubmit={handleSubmit}>
+    <form className={styles["register-form"]} onSubmit={onSubmit}>
       <h2 className={styles["register-form__heading"]}>Register</h2>
       <div className={styles["register-form__inputs"]}>
-        <input
-          className={styles["register-form__input"]}
-          type="email"
+        <Input
           name="email"
+          type="email"
           placeholder="Email"
+          setIsValid={(value) =>
+            setFormDataErrors((prev) => ({ ...prev, isEmailValid: value }))
+          }
+          setValue={(value) =>
+            setFormData((prev) => ({ ...prev, email: value }))
+          }
           value={formData.email}
-          onChange={handleOnChange("email")}
-          onBlur={handleOnBlur("email")}
+          validators={[validateEmail]}
         />
-        {errors.email && (
-          <p className={styles["register-form__input--error"]}>
-            {errors.email}
-          </p>
-        )}
-        <input
-          className={styles["register-form__input"]}
-          type="password"
+        <Input
           name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleOnChange("password")}
-          onBlur={handleOnBlur("password")}
-        />
-        {errors.password && (
-          <p className={styles["register-form__input--error"]}>
-            {errors.password}
-          </p>
-        )}
-        <input
-          className={styles["register-form__input"]}
           type="password"
-          name="passwordRepeat"
-          placeholder="Repeat Password"
-          value={formData.passwordRepeat}
-          onChange={handleOnChange("passwordRepeat")}
-          onBlur={handleOnBlur("passwordRepeat")}
+          placeholder="Password"
+          setIsValid={(value) =>
+            setFormDataErrors((prev) => ({ ...prev, isPasswordValid: value }))
+          }
+          setValue={(value) =>
+            setFormData((prev) => ({ ...prev, password: value }))
+          }
+          value={formData.password}
+          validators={[validatePasswordMinLength, validatePasswordSymbols]}
         />
-        {errors.passwordRepeat && (
-          <p className={styles["register-form__input--error"]}>
-            {errors.passwordRepeat}
-          </p>
-        )}
+        <Input
+          name="passwordRepeat"
+          type="password"
+          placeholder="Repeat Password"
+          setIsValid={(value) =>
+            setFormDataErrors((prev) => ({
+              ...prev,
+              isPasswordRepeatValid: value,
+            }))
+          }
+          setValue={(value) =>
+            setFormData((prev) => ({ ...prev, passwordRepeat: value }))
+          }
+          value={formData.passwordRepeat}
+          validators={[
+            (value) =>
+              value === formData.password ? null : "Passwords do not match",
+          ]}
+          dependencies={["password"]}
+          forceValidation={(value) =>
+            value.length > 0 && value.length >= formData.password.length
+          }
+        />
       </div>
       <button
         className={styles["register-form__button"]}
