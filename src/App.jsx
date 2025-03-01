@@ -1,104 +1,90 @@
 import React from "react"
 import { Input } from "./components"
-import {
-  validateEmail,
-  validatePasswordMinLength,
-  validatePasswordSymbols,
-} from "./validators"
-import styles from "./App.module.css"
+import { useForm } from "react-hook-form"
+import { registerFormSchema } from "./register-form-schema"
+import { yupResolver } from "@hookform/resolvers/yup"
 
 export default function App() {
-  const [formData, setFormData] = React.useState({
-    email: "",
-    password: "",
-    passwordRepeat: "",
-  })
-  const [formDataErrors, setFormDataErrors] = React.useState({
-    isEmailValid: false,
-    isPasswordValid: false,
-    isPasswordRepeatValid: false,
+  const {
+    register,
+    handleSubmit,
+    trigger,
+    formState: { touchedFields, isValid, errors },
+  } = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+      passwordRepeat: "",
+    },
+    resolver: yupResolver(registerFormSchema),
+    mode: "onTouched",
   })
 
   const buttonRef = React.useRef(null)
-  let isFormValid =
-    formDataErrors.isEmailValid &&
-    formDataErrors.isPasswordValid &&
-    formDataErrors.isPasswordRepeatValid
 
-  const onSubmit = (event) => {
-    event.preventDefault()
-
+  const onSubmit = (formData) => {
     console.log(formData)
   }
 
   React.useEffect(() => {
-    if (isFormValid) {
+    if (isValid) {
       buttonRef.current.focus()
     }
-  }, [isFormValid])
+  }, [isValid])
 
   return (
-    <form className={styles["register-form"]} onSubmit={onSubmit}>
-      <h2 className={styles["register-form__heading"]}>Register</h2>
-      <div className={styles["register-form__inputs"]}>
-        <Input
-          name="email"
-          type="email"
-          placeholder="Email"
-          setIsValid={(value) =>
-            setFormDataErrors((prev) => ({ ...prev, isEmailValid: value }))
-          }
-          setValue={(value) =>
-            setFormData((prev) => ({ ...prev, email: value }))
-          }
-          value={formData.email}
-          validators={[validateEmail]}
+    <div className="flex min-h-full flex-1 flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <img
+          alt="My Company"
+          src="https://tailwindui.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+          className="mx-auto h-10 w-auto"
         />
-        <Input
-          name="password"
-          type="password"
-          placeholder="Password"
-          setIsValid={(value) =>
-            setFormDataErrors((prev) => ({ ...prev, isPasswordValid: value }))
-          }
-          setValue={(value) =>
-            setFormData((prev) => ({ ...prev, password: value }))
-          }
-          value={formData.password}
-          validators={[validatePasswordMinLength, validatePasswordSymbols]}
-        />
-        <Input
-          name="passwordRepeat"
-          type="password"
-          placeholder="Repeat Password"
-          setIsValid={(value) =>
-            setFormDataErrors((prev) => ({
-              ...prev,
-              isPasswordRepeatValid: value,
-            }))
-          }
-          setValue={(value) =>
-            setFormData((prev) => ({ ...prev, passwordRepeat: value }))
-          }
-          value={formData.passwordRepeat}
-          validators={[
-            (value) =>
-              value === formData.password ? null : "Passwords do not match",
-          ]}
-          dependencies={["password"]}
-          forceValidation={(value) =>
-            value.length > 0 && value.length >= formData.password.length
-          }
-        />
+        <h2 className="mt-6 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
+          Sign up form
+        </h2>
       </div>
-      <button
-        className={styles["register-form__button"]}
-        type="submit"
-        disabled={!isFormValid}
-        ref={buttonRef}
-      >
-        Register
-      </button>
-    </form>
+
+      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
+        <div className="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            <Input
+              type="email"
+              label="Email"
+              error={errors.email?.message}
+              {...register("email")}
+            />
+
+            <Input
+              type="password"
+              label="Password"
+              error={errors.password?.message}
+              {...register("password", {
+                onChange: () =>
+                  touchedFields.passwordRepeat && trigger("passwordRepeat"),
+              })}
+            />
+
+            <Input
+              type="password"
+              label="Confirm Password"
+              error={errors.passwordRepeat?.message}
+              {...register("passwordRepeat")}
+            />
+
+            <div>
+              <button
+                type="submit"
+                disabled={!isValid}
+                ref={buttonRef}
+                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Submit
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   )
 }

@@ -1,56 +1,20 @@
-import React from "react"
-import styles from "./Input.module.css"
-import { validate } from "./utils"
-
-export const Input = ({
-  value,
-  setValue,
-  setIsValid,
-  validators,
-  dependencies = [],
-  forceValidation = () => false,
-  ...props
-}) => {
-  const [error, setError] = React.useState(null)
-  const [isDirty, setIsDirty] = React.useState(false)
-
-  const validateField = (currentValue, shouldValidate) => {
-    let isValid = false
-    let error = null
-
-    if (shouldValidate) {
-      isValid = error === null
-      error = validate(currentValue, validators)
-    }
-
-    setError(error)
-    setIsValid(isValid)
-  }
-
-  const onChange = ({ target }) => {
-    setIsDirty(true)
-    setValue(target.value)
-
-    const isForceValidate = forceValidation(target.value)
-
-    validateField(target.value, isForceValidate)
-  }
-
-  const onBlur = () => validateField(value, isDirty)
-
-  React.useEffect(() => {
-    validateField(value, isDirty)
-  }, [...dependencies])
-
+export const Input = ({ error, label, ...props }) => {
   return (
-    <>
-      <input
-        onChange={onChange}
-        onBlur={onBlur}
-        className={styles["input"]}
-        {...props}
-      />
-      {error && <p className={styles["input--error"]}>{error}</p>}
-    </>
+    <div>
+      <label
+        htmlFor={props.name}
+        className="block text-sm/6 font-medium text-gray-900"
+      >
+        {label}
+      </label>
+      <div className="mt-2">
+        <input
+          id={props.name}
+          className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+          {...props}
+        />
+      </div>
+      {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
+    </div>
   )
 }
